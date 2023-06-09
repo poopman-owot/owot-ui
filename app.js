@@ -177,7 +177,7 @@ var pm_ui_html = `
           </div>
         </div>
       </div>
-      <button class="theme-toggle-button" id="theme-toggle-button"><i class="fas fa-adjust"></i></button>
+   
       <button class="close-button" id="close-button"><i class="fas fa-times"></i></button>
 
       <div class="tabs">
@@ -732,7 +732,7 @@ var pm_ui_css =
    color: #333;
  }
 
- .theme-toggle-button {
+ #theme-toggle-button {
    background: none;
    border: none;
    cursor: pointer;
@@ -742,7 +742,7 @@ var pm_ui_css =
    font-size: 16px;
  }
 
- .theme-toggle-button:hover {
+ #theme-toggle-button:hover {
    color: #fff;
  }
 
@@ -1061,6 +1061,74 @@ border-radius:5px;
 border:none;
 padding:0.5em;
 }
+
+#chat_window {
+    position: absolute;
+    background-color: #333333;
+    border: solid 1px black;
+    display: flex;
+    flex-flow: column;
+    padding: 0.5em;
+    border-radius: 5px;
+}
+
+#chat_window.dark {
+    background-color: #333333;
+    border: solid 1px black;
+    color: white;
+}
+.chatfield {
+
+    font-family: 'Quicksand';
+    font-size: small;
+}
+.dark .chatfield {
+    border: solid 1px black;
+    background-color: #292929;
+
+}
+.chatfield a {
+    padding: 0.2em;
+    border-radius: 5px;
+    margin-right: 1em;
+    min-width: 10em;
+}
+.dark .chatfield a {
+    color: white!important;
+}
+
+.chatfield > div {
+    padding: 0.3em;
+    border-bottom: 4px solid #efefef;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    font-weight: bold;
+}
+
+.dark .chatfield > div {
+border-bottom: 4px solid #333333
+
+}
+.chatfield > div {
+    padding: 0.3em;
+    border-bottom: 4px solid #e2e2e2
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+}
+#chat_upper {
+    color: white;
+    font-family: 'Quicksand';
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+}
+
 `
 
 var pm_stylesheet = document.createElement("style");
@@ -1069,8 +1137,12 @@ pm_stylesheet.innerHTML = pm_ui_css;
 pm_html.innerHTML = pm_ui_html;
 document.head.appendChild(pm_stylesheet);
 document.body.appendChild(pm_html);
-w.hideChat();
-
+const chat_upper = document.getElementById("chat_upper");
+const darkb =  document.createElement("button");
+darkb.class = "theme-toggle-button";
+darkb.id = "theme-toggle-button";
+darkb.innerHTML = `<i class="fas fa-adjust"></i>`
+chat_upper.appendChild(darkb)
 
 // Get the elements
 var isErasing = false;
@@ -1163,7 +1235,7 @@ filterToggle.addEventListener('click', () => {
 
 // Toggle between light and dark themes
 themeToggleButton.addEventListener('click', () => {
-  content.classList.toggle('light-theme');
+  elm.chat_window.classList.toggle('dark');
 });
 
 function toggle(element, force) {
@@ -1229,13 +1301,13 @@ close_url_paste.addEventListener('click', () => {
 url_paste_btn.click();
 })  
 show_chat_btn.addEventListener('click', () => {
-    toggle(chatbox_container);
-    toggleIcon(chatbox_toggle,chatbox_container)
+    toggle(elm.chat_window);
+    toggleIcon(chatbox_toggle,elm.chat_window)
 })
 
 chat_close_button.addEventListener('click', () => {
-    toggle(chatbox_container);
-    toggleIcon(chatbox_toggle,chatbox_container)
+    toggle(elm.chat_window);
+    toggleIcon(chatbox_toggle,elm.chat_window)
 })
 
 hide_canvas_btn.addEventListener('click', () => {
@@ -1989,6 +2061,11 @@ var char_input_check = setInterval(function() {
 		}
 	}, Math.floor(1000 / speed));
 }, 10);
+
+elm.chat_window.style.display = ""
+elm.chat_window.classList.add("hidden");
+chat_open.classList.add("hidden");
+chat_window.style.left = "2.1em"
 
 }
 owot_ui();
