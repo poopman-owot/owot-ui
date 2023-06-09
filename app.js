@@ -2065,7 +2065,9 @@ var char_input_check = setInterval(function() {
 elm.chat_window.style.display = ""
 elm.chat_window.classList.add("hidden");
 chat_open.classList.add("hidden");
-chat_window.style.left = "2.1em"
+chat_window.style.left = "2.1em";
+resizeChat(600);
+chat_close.outerHTML = "<div></div>"
 
 }
 owot_ui();
