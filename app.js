@@ -1,5 +1,63 @@
 
-function owot_ui(){javascript:var e;(e=document.createElement("script")).src="//cdn.jsdelivr.net/npm/sweetalert2@11",document.head.appendChild(e);
+var doFilter = false;
+var chatOpened = (chatOpen == true) ? "fa-toggle-on" : "fa-toggle-off";
+function resetChat(){
+while(page_chatfield.firstChild) {page_chatfield.firstChild.remove();} network.chathistory();
+}
+function shouldFilter(message, type, hasTagDom, nickname,id,realUsername){
+const filterAnons = filter_anon_toggle.classList.contains("fa-toggle-on");
+if(hasTagDom){
+return false //members and above arent filtered
+}
+if (filterAnons && type == "anon") {
+return true // filter anons if set to true
+}
+
+function checklist(message, list) {
+  const lowercaseMessage = message.toLowerCase();
+  const lowercaselist = list.map(item => item.toLowerCase());
+
+  const words = lowercaseMessage.split(/\s+/);
+
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+
+    if (word === "") {
+      continue; // Ignore empty strings in the message
+    }
+
+    if (lowercaselist.includes(word)) {
+      return true; // Found a full word match in the blacklist
+    }
+
+    if (lowercaselist.some(item => item !== "" && word.includes(item))) {
+      return true; // Found a partial match in the blacklist
+    }
+  }
+
+  return false; // No match found in the blacklist
+}
+
+
+var blacklist = [];
+var whitelist = [];
+for (filterInput of document.getElementsByClassName("bl_filter")){
+    blacklist.push(filterInput.value);
+}
+for (filterInput of document.getElementsByClassName("wl_filter")){
+    whitelist.push(filterInput.value);
+}
+var shouldFilter = checklist(message,blacklist) || checklist(nickname,blacklist) || checklist(id.toString(),blacklist) || checklist(realUsername,blacklist);
+if(shouldFilter){
+shouldFilter = !(checklist(message,whitelist) || checklist(nickname,whitelist) || checklist(id.toString(),whitelist) || checklist(realUsername,whitelist));
+}
+
+
+return shouldFilter; // dont filter
+}
+
+var e;(e=document.createElement("script")).src="//cdn.jsdelivr.net/npm/sweetalert2@11",document.head.appendChild(e);
+
 var pm_ui_html = `
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" type="text/css" href="styles.css">
@@ -145,127 +203,20 @@ var pm_ui_html = `
         <div class="popup-panel">
           <div class="panel-header">Chat Settings</div>
           <ul class="icon-list">
-            <li class="btn" id="show-chat-btn"><i class="fas fa-comment-alt"></i>Show Chat<i class="fas fa-toggle-off"></i></li>
+            <li class="btn" id="show-chat-btn"><i class="fas fa-comment-alt"></i>Show Chat<i class="fas ${chatOpened}"></i></li>
             <li class="btn" id="hide-canvas-btn"><i class="fas fa-low-vision"></i>Hide Canvas<i class="fas fa-toggle-off"></i></li>
           </ul>
         </div>
       </div>
     </div>
-    <div class="chat-box hidden">
-      <div id="fltr-popup" class="fltr-popup hidden">
-        <div class="fltr-popup-content">
-          <div class="fltr-column">
-            <h3>Blacklist</h3>
-            <div class="fltr-anon-section">
-              <button class="toggle-anon btn" id="filter-anon">Blacklist Anons<div id="ba_blank"></div><i class="fas fa-toggle-off"></i></button>
-            </div>
-            <div id="fltr-blacklist-filters">
-              <div class="fltr-filter-input">
-                <input type="text" placeholder="Enter a filter">
-                <button class="btn fltr-add-filter" id="add-blacklist-btn"><i class="fas fa-plus-square"></i></button>
-              </div>
-            </div>
-          </div>
-          <div class="fltr-column">
-            <h3>Whitelist</h3>
-            <div id="fltr-whitelist-filters">
-              <div class="fltr-filter-input">
-                <input type="text" placeholder="Enter a filter">
-                <button class="btn fltr-add-filter" id="add-whitelist-btn"><i class="fas fa-plus-square"></i></button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+
    
       <button class="close-button" id="close-button"><i class="fas fa-times"></i></button>
 
-      <div class="tabs">
-        <button class="tab active btn" id="this-page-tab">This Page</button>
-        <button class="tab btn" id="global-tab">Global</button>
-        <button class="toggle-filter btn" id="filter-toggle"><i class="fas fa-filter"></i> Filter <i class="fas fa-toggle-off"></i></button>
-      </div>
-      <div class="content">
-        <div class="page active" id="this-page">
-          <!-- This Page content -->
-          <div class="page active" id="this-page">
-            <div class="chat-entry">
-              <a title="(2023 June 6 4:13 PM)">4815</a>
-              <span>&nbsp;your sis isn't &gt;13 right</span>
-            </div>
-            <div class="chat-entry">
-              <span style="color: rgb(0, 170, 0); font-weight: bold;">(Member)&nbsp;</span>
-              <a title="ID 4572; Member; Username &quot;theawesomepikachu20&quot;; (2023 June 6 4:05 PM)">tap20 can't decide whether to grammar:</a>
-              <span>&nbsp;hi poop</span>
-            </div>
-            <div class="chat-entry">
-              <a title="(2023 June 6 4:13 PM)">4815</a>
-              <span>&nbsp;your sis isn't &gt;13 right</span>
-            </div>
-            <div class="chat-entry">
-              <span style="color: rgb(0, 170, 0); font-weight: bold;">(Member)&nbsp;</span>
-              <a title="ID 4572; Member; Username &quot;theawesomepikachu20&quot;; (2023 June 6 4:05 PM)">tap20 can't decide whether to grammar:</a>
-              <span>&nbsp;hi poop</span>
-            </div>
-            <div class="chat-entry">
-              <a title="(2023 June 6 4:13 PM)">4815</a>
-              <span>&nbsp;your sis isn't &gt;13 right</span>
-            </div>
-            <div class="chat-entry">
-              <span style="color: rgb(0, 170, 0); font-weight: bold;">(Member)&nbsp;</span>
-              <a title="ID 4572; Member; Username &quot;theawesomepikachu20&quot;; (2023 June 6 4:05 PM)">tap20 can't decide whether to grammar:</a>
-              <span>&nbsp;hi poop</span>
-            </div>
-            <div class="chat-entry">
-              <a title="(2023 June 6 4:13 PM)">4815</a>
-              <span>&nbsp;your sis isn't &gt;13 right</span>
-            </div>
-            <div class="chat-entry">
-              <span style="color: rgb(0, 170, 0); font-weight: bold;">(Member)&nbsp;</span>
-              <a title="ID 4572; Member; Username &quot;theawesomepikachu20&quot;; (2023 June 6 4:05 PM)">tap20 can't decide whether to grammar:</a>
-              <span>&nbsp;hi poop</span>
-            </div>
-            <div class="chat-entry">
-              <a title="(2023 June 6 4:13 PM)">4815</a>
-              <span>&nbsp;your sis isn't &gt;13 right</span>
-            </div>
-            <div class="chat-entry">
-              <span style="color: rgb(0, 170, 0); font-weight: bold;">(Member)&nbsp;</span>
-              <a title="ID 4572; Member; Username &quot;theawesomepikachu20&quot;; (2023 June 6 4:05 PM)">tap20 can't decide whether to grammar:</a>
-              <span>&nbsp;hi poop</span>
-            </div>
-            <div class="chat-entry">
-              <span style="color: rgb(0, 170, 0); font-weight: bold;">(Member)&nbsp;</span>
-              <a title="ID 4572; Member; Username &quot;theawesomepikachu20&quot;; (2023 June 6 4:05 PM)">tap20 can't decide whether to grammar:</a>
-              <span>&nbsp;hi poop</span>
-            </div>
-            <div class="chat-entry">
-              <span style="color: rgb(0, 170, 0); font-weight: bold;">(Member)&nbsp;</span>
-              <a title="ID 4572; Member; Username &quot;theawesomepikachu20&quot;; (2023 June 6 4:05 PM)">tap20 can't decide whether to grammar:</a>
-              <span>&nbsp;hi poop</span>
-            </div>
-            <div class="chat-entry">
-              <span style="color: rgb(0, 170, 0); font-weight: bold;">(Member)&nbsp;</span>
-              <a title="ID 4572; Member; Username &quot;theawesomepikachu20&quot;; (2023 June 6 4:05 PM)">tap20 can't decide whether to grammar:</a>
-              <span>&nbsp;hi poop</span>
-            </div>
-            <div class="chat-entry">
-              <span style="color: rgb(0, 170, 0); font-weight: bold;">(Member)&nbsp;</span>
-              <a title="ID 4572; Member; Username &quot;theawesomepikachu20&quot;; (2023 June 6 4:05 PM)">tap20 can't decide whether to grammar:</a>
-              <span>&nbsp;hi poop</span>
-            </div>
-          </div>
-        </div>
-        <div class="page" id="global-page">
-          <!-- Global Page content -->
-          <h2>Global Content</h2>
-        </div>
-      </div>
 
-      <div class="chat-input">
-        <input type="text" placeholder="Type your message..." id="message-input">
-        <button id="send-button"><i class="fas fa-paper-plane"></i></button>
-      </div>
+
+
+
     </div>
 
 
@@ -1128,7 +1079,21 @@ border-bottom: 4px solid #333333
     justify-content: space-between;
     align-items: center;
 }
-
+#close-chatbox {
+    color: white;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: larger;
+}
+#filter-toggle {
+    background: none;
+    border: none;
+    color: #ccc;
+}
+#filter-toggle:hover {
+    color: white;
+}
 `
 
 var pm_stylesheet = document.createElement("style");
@@ -1137,17 +1102,62 @@ pm_stylesheet.innerHTML = pm_ui_css;
 pm_html.innerHTML = pm_ui_html;
 document.head.appendChild(pm_stylesheet);
 document.body.appendChild(pm_html);
+
 const chat_upper = document.getElementById("chat_upper");
 const darkb =  document.createElement("button");
+var flterWnd = document.createElement("button");
+flterWnd.id = "fltr-popup";
+flterWnd.class = "fltr-popup";
+flterWnd.classList.add("hidden");
+flterWnd.innerHTML = `
+        <div class="fltr-popup-content">
+          <div class="fltr-column">
+            <h3>Blacklist</h3>
+            <div class="fltr-anon-section">
+              <button class="toggle-anon btn" id="filter-anon">Blacklist Anons<div id="ba_blank"></div><i class="fas fa-toggle-off"></i></button>
+            </div>
+            <div id="fltr-blacklist-filters">
+              <div class="fltr-filter-input">
+                <input class = "bl_filter" type="text" placeholder="Enter a filter" onInput = "resetChat();">
+                <button class="btn fltr-add-filter" id="add-blacklist-btn"><i class="fas fa-plus-square"></i></button>
+              </div>
+            </div>
+          </div>
+          <div class="fltr-column">
+            <h3>Whitelist</h3>
+            <div id="fltr-whitelist-filters">
+              <div class="fltr-filter-input">
+                <input class = "wl_filter" type="text" placeholder="Enter a filter" onInput = "resetChat();">
+                <button class="btn fltr-add-filter" id="add-whitelist-btn"><i class="fas fa-plus-square"></i></button>
+              </div>
+            </div>
+          </div>
+        `;
+elm.chat_window.appendChild(flterWnd)
+
 darkb.class = "theme-toggle-button";
 darkb.id = "theme-toggle-button";
 darkb.innerHTML = `<i class="fas fa-adjust"></i>`
+
+const closeCB =  document.createElement("button");
+closeCB.class = "close-button btn";
+closeCB.id = "close-chatbox";
+closeCB.innerHTML = `<i class="fas fa-times"></i>`
+
+const fltr_tgl =  document.createElement("button");
+fltr_tgl.class = "toggle-filter btn";
+fltr_tgl.id = "filter-toggle";
+fltr_tgl.innerHTML = `<i class="fas fa-filter"></i> Filter <i class="fas fa-toggle-off"></i>`
+
+fltr_tgl.classList.add("btn");
+
+chat_upper.appendChild(fltr_tgl);
 chat_upper.appendChild(darkb)
+chat_upper.appendChild(closeCB);
+
 
 // Get the elements
 var isErasing = false;
-const thisPageTab = document.getElementById('this-page-tab');
-const globalTab = document.getElementById('global-tab');
 const thisPage = document.getElementById('this-page');
 const globalPage = document.getElementById('global-page');
 const filterToggle = document.getElementById('filter-toggle');
@@ -1210,24 +1220,11 @@ const url_paste_input = document.getElementById("url-paste-input");
 const close_url_paste = document.getElementById("close-url-paste");
 const url_paste_options = document.getElementById("url-paste-options")
 
-// Toggle between tabs
-thisPageTab.addEventListener('click', () => {
-  thisPageTab.classList.add('active');
-  globalTab.classList.remove('active');
-  thisPage.style.display = 'block';
-  globalPage.style.display = 'none';
-});
-
-globalTab.addEventListener('click', () => {
-  thisPageTab.classList.remove('active');
-  globalTab.classList.add('active');
-  thisPage.style.display = 'none';
-  globalPage.style.display = 'block';
-});
 
 // Toggle filter
 filterToggle.addEventListener('click', () => {
-  // Toggle filter functionality here
+  doFilter = (flterWnd.classList.contains("hidden"));
+resetChat();
 });
 
 // Get the elements
@@ -1309,7 +1306,9 @@ chat_close_button.addEventListener('click', () => {
     toggle(elm.chat_window);
     toggleIcon(chatbox_toggle,elm.chat_window)
 })
-
+closeCB.addEventListener('click', () => {
+chat_close_button.click();
+})
 hide_canvas_btn.addEventListener('click', () => {
     toggle(owot);
     toggleIcon(hide_canvas_toggle,owot,true)
@@ -1322,7 +1321,8 @@ fltr_btn.addEventListener('click', () => {
 
 filter_anon.addEventListener('click', () => {
     toggle(ba_blank);
-    toggleIcon(filter_anon_toggle,ba_blank,true)
+    toggleIcon(filter_anon_toggle,ba_blank,true);
+resetChat();
 })
 
 cursor_coords_btn.addEventListener('click', () => {
@@ -2063,11 +2063,380 @@ var char_input_check = setInterval(function() {
 }, 10);
 
 elm.chat_window.style.display = ""
+if(chatOpen !== true){
 elm.chat_window.classList.add("hidden");
+}
 chat_open.classList.add("hidden");
 chat_window.style.left = "2.1em";
 resizeChat(600);
 chat_close.outerHTML = "<div></div>"
 
+
+function addChat(chatfield, id, type, nickname, message, realUsername, op, admin, staff, color, date, dataObj) {
+
+    var chatGroup = document.createElement("div");
+    var nameContainer = document.createElement("span");
+
+	if(!dataObj) dataObj = {};
+	if(!message) message = "";
+	if(!realUsername) realUsername = "";
+	if(!nickname) nickname = realUsername;
+	if(!color) color = assignColor(nickname);
+	var dateStr = "";
+	if(date) dateStr = convertToDate(date);
+	var field = evaluateChatfield(chatfield);
+	var pm = dataObj.privateMessage;
+	var isGreen = false;
+
+	if(chatGreentext && message[0] == ">" && !(":;_-".includes(message[1]))) { // exception to some emoticons
+		message = message.substr(1);
+		isGreen = true;
+	}
+
+	if(chatLimitCombChars) {
+		message = filterChatMessage(message);
+		nickname = filterChatMessage(nickname);
+	}
+
+	if(!op) {
+		message = html_tag_esc(message);
+		nickname = html_tag_esc(nickname);
+	}
+
+	// do not give the tag to [ Server ]
+	var hasTagDom = (op || admin || staff || dataObj.rankName) && !(!id && op);
+	var tagDom;
+	var nickTitle = [];
+	var usernameHasSpecialChars = false;
+
+	for(var i = 0; i < realUsername.length; i++) {
+		if(realUsername.charCodeAt(i) > 256) {
+			usernameHasSpecialChars = true;
+			break;
+		}
+	}
+
+	if(type == "user" || type == "user_nick") {
+		nickTitle.push("ID " + id);
+	}
+	
+	if(hasTagDom) {
+		tagDom = document.createElement("span");
+		if(dataObj.rankName) {
+			tagDom.innerHTML = "(" + dataObj.rankName + ")";
+			tagDom.style.fontWeight = "bold";
+			nickTitle.push(dataObj.rankName);
+            nameContainer.style.outline = `4px solid ${dataObj.rankColor}`;
+		} else if(op) {
+			tagDom.innerHTML = "(OP)";
+			tagDom.style.fontWeight = "bold";
+			nickTitle.push("Operator");
+             nameContainer.style.outline = "4px solid #0033cc";
+		} else if(admin) {
+			tagDom.innerHTML = "(A)";
+			tagDom.style.fontWeight = "bold";
+			nickTitle.push("Administrator");
+             nameContainer.style.outline = "4px solid #FF0000";
+		} else if(staff) {
+			tagDom.innerHTML = "(M)";
+			tagDom.style.fontWeight = "bold";
+			nickTitle.push("Staff");
+             nameContainer.style.outline = "4px solid #009933";
+		}
+        tagDom.style.color = "white";
+		tagDom.innerHTML += "&nbsp;";
+	}
+
+	var idTag = "";
+
+	var nickDom = document.createElement("a");
+	nickDom.style.textDecoration = "none";
+
+        nameContainer.style.background = color;
+
+        nameContainer.style.padding = "0.3em 1em";
+        nameContainer.style.borderRadius = "1em";
+        nameContainer.style.margin = "0em 1em";
+        nickDom.style.color = "white";
+        nameContainer.style.textShadow = "0px 0px 2px black";
+	if(type == "user") {
+		
+
+		if(!usernameHasSpecialChars) {
+			nickDom.style.fontWeight = "bold";
+		}
+		nickDom.style.pointerEvents = "default";
+		if(state.userModel.is_operator) idTag = "[" + id + "]";
+	}
+	if(type == "anon_nick") {
+		idTag = "*" + id;
+	}
+	if(type == "anon") {
+		idTag = id +"";
+	}
+	if(type == "user_nick") {
+		nickDom.style.color = "white";
+		var impersonationWarning = "";
+		if(usernameHasSpecialChars) {
+			impersonationWarning = " (Special chars)";
+		}
+		nickTitle.push("Username \"" + realUsername + "\"" + impersonationWarning);
+		if(state.userModel.is_operator) idTag = "[*" + id + "]";
+	}
+
+	if(state.userModel.is_operator) {
+		idTag = "<span style=\"color: black; font-weight: normal;\">" + idTag + "</span>"
+	}
+
+	if(idTag && type != "anon") idTag += "&nbsp;"; // space between id and name
+
+	if(id == 0) {
+		idTag = "";
+		nickname = "<span style=\"background-color: #e2e2e2;\">" + nickname + "</span>";
+	}
+
+	nickname = idTag + nickname;
+
+	if(dateStr) nickTitle.push("(" + dateStr + ")");
+
+	nickDom.innerHTML = nickname + (pm == "to_me" ? "" : "");
+	if(nickTitle.length) nickDom.title = nickTitle.join("; ");
+
+	var pmDom = null;
+	if(pm) {
+		pmDom = document.createElement("div");
+		pmDom.style.display = "inline";
+		if(pm == "to_me") {
+			pmDom.innerText = " -> Me:";
+		} else if(pm == "from_me") {
+			pmDom.innerText = "Me -> ";
+		}
+	}
+
+	if(isGreen) {
+		message = "<span style=\"color: #789922\">&gt;" + message + "</span>";
+	}
+
+	// parse emoticons
+	if(chatEmotes) {
+		var emoteMessage = "";
+		var emoteBuffer = "";
+		var emoteMode = false;
+		var emoteCharset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+		// emotes are case sensitive
+		for(var i = 0; i < message.length; i++) {
+			var chr = message[i];
+			if(chr == ":") {
+				if(emoteBuffer == ":" && emoteMode) { // special case: two consecutive colons
+					emoteMessage += emoteBuffer;
+					continue;
+				}
+				emoteBuffer += chr;
+				if(emoteMode) {
+					var emoteName = emoteBuffer.slice(1, -1);
+					if(emoteList.hasOwnProperty(emoteName)) {
+						var position = emoteList[emoteName];
+						emoteMessage += "<div title=':" + emoteName
+							+ ":' class='chat_emote' style='background-position-x:-" + position[0]
+							+ "px;width:" + position[1] + "px'></div>";
+					} else {
+						emoteMessage += emoteBuffer;
+					}
+					emoteMode = false;
+					emoteBuffer = "";
+				} else {
+					emoteMode = true;
+				}
+			} else if(emoteMode) {
+				emoteBuffer += chr;
+				if(!emoteCharset.includes(chr)) {
+					emoteMode = false;
+					emoteMessage += emoteBuffer;
+					emoteBuffer = "";
+					continue;
+				}
+			} else {
+				emoteMessage += chr;
+			}
+		}
+		if(emoteBuffer) { // leftovers
+			emoteMessage += emoteBuffer;
+		}
+		message = emoteMessage;
+	}
+
+	var msgDom = document.createElement("span");
+	msgDom.innerHTML = "&nbsp;" + message;
+
+	var maxScroll = field.scrollHeight - field.clientHeight;
+	var scroll = field.scrollTop;
+	var doScrollBottom = false;
+	if(maxScroll - scroll < 20) { // if scrolled at least 20 pixels above bottom
+		doScrollBottom = true;
+	}
+
+    if(doFilter){
+        if(shouldFilter(message, type, hasTagDom, nickname,id,realUsername))
+            return
+    }
+
+    
+    chatGroup.appendChild(nameContainer);
+	if(!pm && hasTagDom) nameContainer.appendChild(tagDom);
+	if(pmDom) {
+		if(pm == "to_me") {
+			if(hasTagDom) nameContainer.appendChild(tagDom);
+			nameContainer.appendChild(nickDom);
+			nameContainer.appendChild(pmDom);
+		} else if(pm == "from_me") {
+			nameContainer.appendChild(pmDom);
+			if(hasTagDom) nameContainer.appendChild(tagDom);
+			nameContainer.appendChild(nickDom);
+		}
+	} else {
+		nameContainer.appendChild(nickDom);
+	}
+	chatGroup.appendChild(msgDom);
+
+	field.appendChild(chatGroup);
+
+	maxScroll = field.scrollHeight - field.clientHeight;
+	if(doScrollBottom) {
+		field.scrollTop = maxScroll;
+	}
+
+	var chatRec = {
+		id: id, date: date,
+		field: field,
+		element: chatGroup
+	};
+	if(field == elm.page_chatfield) {
+		chatRecordsPage.push(chatRec);
+	} else if(field == elm.global_chatfield) {
+		chatRecordsGlobal.push(chatRec);
+	}
+	if(chatRecordsPage.length > chatHistoryLimit) { // overflow on current page
+		var rec = chatRecordsPage.shift();
+		rec.element.remove();
+	}
+	if(chatRecordsGlobal.length > chatHistoryLimit) { // overflow on global
+		var rec = chatRecordsGlobal.shift();
+		rec.element.remove();
+	}
 }
-owot_ui();
+resetChat();
+var canResizeChat = true;
+flterWnd.addEventListener("mouseover", function(e) {
+    canResizeChat = false;
+})
+flterWnd.addEventListener("mouseout", function(e) {
+    canResizeChat = true
+})
+   var eventType = "mousemove";
+var eventListeners = getEventListeners(chat_window);
+
+eventType = "mousedown"
+if (eventListeners[eventType]) {
+  eventListeners[eventType].forEach(listener => {
+    chat_window.removeEventListener(eventType, listener.listener);
+  });
+}
+function resizable_chat() {
+
+	var state = 0;
+	var isDown = false;
+	var downX = 0;
+	var downY = 0;
+	var elmX = 0;
+	var elmY = 0;
+	var chatWidth = 0;
+	var chatHeight = 0;
+	chat_window.addEventListener("mousemove", function(e) {
+		if(isDown) return;
+		var posX = e.pageX - chat_window.offsetLeft;
+		var posY = e.pageY - chat_window.offsetTop;
+		var top = (posY) <= 4;
+		var left = (posX) <= 3;
+		var right = (chat_window.offsetWidth - posX) <= 4;
+		var bottom = (chat_window.offsetHeight - posY) <= 5;
+		var cursor = "";
+		if(left || right) cursor = "ew-resize";
+		if(top || bottom) cursor = "ns-resize";
+		if((top && left) || (right && bottom)) cursor = "nwse-resize";
+		if((bottom && left) || (top && right)) cursor = "nesw-resize";
+		chat_window.style.cursor = cursor;
+		state = bottom << 3 | right << 2 | left << 1 | top;
+	});
+	chat_window.addEventListener("mousedown", function(e) {
+       if(!canResizeChat) return;
+		downX = e.pageX;
+		downY = e.pageY;
+		if(state) {
+			// subtract 2 for the borders
+			chatWidth = chat_window.offsetWidth - 16;
+			chatHeight = chat_window.offsetHeight - 16;
+			elmX = chat_window.offsetLeft;
+			elmY = chat_window.offsetTop;
+			isDown = true;
+			chatResizing = true;
+            console.log("RESIZE")
+		}
+	});
+	document.addEventListener("mouseup", function() {
+		isDown = false;
+		chatResizing = false;
+	});
+	document.addEventListener("mousemove", function(e) {
+        
+		if(!isDown) return;
+    
+		var offX = e.pageX - downX;
+		var offY = e.pageY - downY;
+		var resize_bottom = state >> 3 & 1;
+		var resize_right = state >> 2 & 1;
+		var resize_left = state >> 1 & 1;
+		var resize_top = state & 1;
+
+		var width_delta = 0;
+		var height_delta = 0;
+		var abs_top = chat_window.offsetTop;
+		var abs_left = chat_window.offsetLeft;
+		var snap_bottom = chat_window.style.bottom == "0px";
+		var snap_right = chat_window.style.right == "0px";
+
+		if(resize_top) {
+			height_delta = -offY;
+		} else if(resize_bottom) {
+			height_delta = offY;
+		}
+		if(resize_left) {
+			width_delta = -offX;
+		} else if(resize_right) {
+			width_delta = offX;
+		}
+		var res = resizeChat(chatWidth + width_delta, chatHeight + height_delta);
+		if(resize_top && !snap_bottom) {
+			chat_window.style.top = (elmY + (chatHeight - res[1])) + "px";
+		}
+		if(resize_bottom && snap_bottom) {
+			chat_window.style.bottom = "";
+			chat_window.style.top = abs_top + "px";
+		}
+		if(resize_right && snap_right) {
+			chat_window.style.right = "";
+			chat_window.style.left = abs_left + "px";
+		}
+		if(resize_left && !snap_right) {
+			chat_window.style.left = (elmX + (chatWidth - res[0])) + "px";
+		}
+	});
+}
+resizable_chat();
+draggable_element(elm.chat_window, null, [
+	elm.chatbar, elm.chatsend, elm.chat_close, elm.chat_page_tab, elm.chat_global_tab, elm.page_chatfield, elm.global_chatfield,flterWnd
+], function() {
+	if(chatResizing) {
+		return -1;
+	}
+});
+
