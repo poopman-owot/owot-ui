@@ -1,4 +1,4 @@
-function pm_ui() {
+
   var doFilter = false;
   var chatOpened = (chatOpen == true) ? "fa-toggle-on" : "fa-toggle-off";
   var showPastePreview = false;
@@ -2401,7 +2401,7 @@ font-family: 'Quicksand';
     canResizeChat = true
   })
   var eventType = "mousemove";
-  var eventListeners = getEventListeners(chat_window);
+ /* var eventListeners = getEventListeners(chat_window);
 
   eventType = "mousedown"
   if (eventListeners[eventType]) {
@@ -2409,6 +2409,7 @@ font-family: 'Quicksand';
       chat_window.removeEventListener(eventType, listener.listener);
     });
   }
+*/
 
   function resizable_chat() {
 
@@ -2657,5 +2658,5 @@ font-family: 'Quicksand';
       }
     });
   }
-}
-pm_ui();
+
+
