@@ -3,6 +3,7 @@ var chatOpened = (chatOpen == true) ? "fa-toggle-on" : "fa-toggle-off";
 var showPastePreview = false;
 var previewText = "";
 var demoCanv = document.createElement("canvas");
+
 function resetChat() {
   while (page_chatfield.firstChild) {
     page_chatfield.firstChild.remove();
@@ -1474,24 +1475,30 @@ owot.addEventListener("mousedown", (e) => {
   eraseEvent = e;
 });
 
-const CellToPixelCoords = (...cellCoords) => {
-  const [x = 0, y = 0, z = 0, w = 0] = Array.isArray(cellCoords[0]) ? cellCoords[0] : cellCoords;
 
-  if (cellCoords.length > 4 || x === undefined || y === undefined || z === undefined || w === undefined) {
-    console.error(`CellToPixelCoords: Invalid cellCoords. Arguments can either be [x, y, z, w] or x, y, z, w. Your cellCoords was: ${cellCoords}`);
-    return;
+function CellToPixelCoords(tileX, tileY, charX, charY) {
+  if (Array.isArray(tileX)) {
+    // If the first argument is an array, destructure the values
+    [tileX, tileY, charX, charY] = tileX;
   }
+tileX /=2;
+tileY /=2;   
+  // calculate in-tile cell position
+  var charXInTile = tileX * tileC + charX;
+  var charYInTile = tileY * tileR + charY;
 
-  const X = Math.round(x) * tileW + z * cellW + Math.round(positionX) + Math.round(owotWidth / 2);
-  const Y = Math.round(y) * tileH + w * cellH + Math.round(positionY) + Math.round(owotHeight / 2);
+  // calculate global cell position
+  var charXGlobal = Math.floor(tileX * tileC * cellW + charXInTile * cellW + positionX + Math.trunc(owotWidth / 2));
+  var charYGlobal = Math.floor(tileY * tileR * cellH + charYInTile * cellH + positionY + Math.trunc(owotHeight / 2));
 
-  return [X, Y];
+  return [charXGlobal, charYGlobal];
 }
 
 function eraseSelectionStart(start, end, width, height) {
   renderCursor(start)
   w.eraseSelect.stopSelectionUI(true)
   let [pageX, pageY] = CellToPixelCoords(start)
+  
   eraseEvent.pageX = pageX;
   eraseEvent.pageY = pageY;
   event_mouseup(eraseEvent, pageX, pageY);
@@ -2550,9 +2557,9 @@ w.on("cursorMove", function(e) {
   const x = e.charX;
   const y = e.charY;
   const [cpX, cpY] = CellToPixelCoords(X, Y, x, y);
-
-  demoCanv.style.left = cpX + "px";
-  demoCanv.style.top = cpY + "px";
+console.log(cpX, cpY)
+  demoCanv.style.left = cpX/zoomRatio + "px";
+  demoCanv.style.top = cpY/zoomRatio + "px";
 
   if (showPastePreview) {
     PasteClipboardPreview();
@@ -2582,7 +2589,7 @@ function PasteClipboardPreview() {
 
 function renderPreviewChar(textRender, posX, posY, char, color, link, writability) {
   var textYOffset = cellH - (5 * zoom);
-  
+
   var fontX = posX * cellW;
   var fontY = posY * cellH;
 
@@ -2643,10 +2650,10 @@ function renderPreviewChar(textRender, posX, posY, char, color, link, writabilit
   if (char.codePointAt(0) > 65535) checkIdx = 2;
   var isSpecial = char.codePointAt(checkIdx) != void 0;
   isSpecial = isSpecial || (cCode >= 0x2500 && cCode <= 0x257F);
-  
-  if(isValidSpecialSymbol(cCode)) {
-	  drawBlockChar(cCode, textRender, posX, posY, tileW, tileH);
-	  return;
+
+  if (isValidSpecialSymbol(cCode)) {
+    drawBlockChar(cCode, textRender, posX, posY, tileW, tileH);
+    return;
   }
 
   var tempFont = null;
@@ -2659,6 +2666,7 @@ function renderPreviewChar(textRender, posX, posY, char, color, link, writabilit
     if (isItalic) tempFont = "italic " + tempFont;
     textRender.font = tempFont;
   }
+textRender.font = fontTemplate.replace("$", normFontSize(16 * zoom));
   textRender.fillText(char, Math.round(fontX + XPadding), Math.round(fontY + textYOffset));
   if (prevFont) {
     textRender.font = prevFont;
