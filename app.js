@@ -2540,6 +2540,7 @@ var ppc_style =
     z-index: 1000;
     outline: 1px dashed black;
     pointer-events: none;
+    transform-origin: top left;
     }
 `
 demoCanv.classList.add("hidden");
@@ -2560,7 +2561,7 @@ w.on("cursorMove", function(e) {
 console.log(cpX, cpY)
   demoCanv.style.left = cpX/zoomRatio + "px";
   demoCanv.style.top = cpY/zoomRatio + "px";
-
+	demoCanv.style.transform = `scale(${1/zoomRatio})`
   if (showPastePreview) {
     PasteClipboardPreview();
   }
