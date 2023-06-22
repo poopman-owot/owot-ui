@@ -815,21 +815,28 @@ font-family: 'Quicksand';
    padding: 0.2em;
  }
 
- #fltr-popup {
-   left: 100%;
-   top: 0;
-   position: absolute;
-   height: 100%;
-   width: max-content;
-   display: flex;
-   background: #1d1d1d;
-   color: white;
-   padding: 1em;
-   border-left: 4px solid #1d1d1d;
-   border-radius: 0 6px 0 0;
-  overflow-x: auto;
- }
-
+#chat-popup {
+    left: 100%;
+    top: 0;
+    position: absolute;
+    height: 100%;
+    width: max-content;
+    display: flex;
+    background: #1d1d1d;
+    color: white;
+    padding: 1em;
+    border-left: 4px solid #1d1d1d;
+    border-radius: 0 6px 0 0;
+    overflow-x: auto;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    min-width: 17em;
+}
+#chat-popup button, #chat-popup input, #chat-popup label {
+    pointer-events: all;
+}
 .fltr-filter-input button {
     background: transparent;
     color: white;
@@ -1126,6 +1133,58 @@ border-bottom: 4px solid #333333
 #unload-pm{
 font-family: 'Quicksand';
 }
+
+.emo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16px, 1fr));
+    grid-gap: 10px;
+    align-items: stretch;
+    justify-items: center;
+    justify-content: space-between;
+    align-content: space-between;
+}
+    
+    .emo-button {
+      display: none;
+
+    }
+    
+    .emo-label {
+      display: inline-block;
+cursor:pointer
+    }
+.chat_emote{
+cursor:pointer
+}
+#emoji-toggle {
+    cursor: pointer;
+    width: 1em;
+    height: 1em;
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+#chat_lower{
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-around;
+    align-items: center;
+}
+.btn {
+    color: #ddd;
+}
+
+.btn:hover {
+    color: white;
+}
+#emo-container{
+margin-bottom:2em;
+}
 `
 
 var pm_stylesheet = document.createElement("style");
@@ -1137,12 +1196,12 @@ document.body.appendChild(pm_html);
 
 const chat_upper = document.getElementById("chat_upper");
 const darkb = document.createElement("button");
-var flterWnd = document.createElement("button");
-flterWnd.id = "fltr-popup";
-flterWnd.class = "fltr-popup";
+var flterWnd = document.createElement("div");
+flterWnd.id = "chat-popup";
+flterWnd.class = "chat-popup";
 flterWnd.classList.add("hidden");
 flterWnd.innerHTML = `
-        <div class="fltr-popup-content">
+        <div id="filter-popup-content" class = "hidden">
           <div class="fltr-column">
             <h3>Blacklist</h3>
             <div class="fltr-anon-section">
@@ -1164,6 +1223,8 @@ flterWnd.innerHTML = `
               </div>
             </div>
           </div>
+</div>
+<div id="emo-container" class = "hidden"><h3 style="margin-bottom: 0.5em;">Emojis</h3><div id="emo-gridContainer" class="emo-grid"></div></div>
         `;
 elm.chat_window.appendChild(flterWnd)
 
@@ -1186,10 +1247,14 @@ fltr_tgl.classList.add("btn");
 chat_upper.appendChild(fltr_tgl);
 chat_upper.appendChild(darkb)
 chat_upper.appendChild(closeCB);
-
-
+const chat_lower = document.getElementById("chat_lower");
+const emojiBTN = document.createElement("div");
+emojiBTN.id = "emoji-toggle";
+emojiBTN.innerHTML = `<i class="btn fas fa-star-half-alt"></i>`
+chat_lower.appendChild(emojiBTN);
 // Get the elements
 var isErasing = false;
+
 const thisPage = document.getElementById('this-page');
 const globalPage = document.getElementById('global-page');
 const filterToggle = document.getElementById('filter-toggle');
@@ -1202,7 +1267,7 @@ const hide_canvas_btn = document.getElementById("hide-canvas-btn");
 const hide_canvas_toggle = hide_canvas_btn.children[1];
 const fltr_btn = document.getElementById("filter-toggle");
 const fltr_btn_toggle = fltr_btn.children[1];
-const fltr_popup = document.getElementById("fltr-popup");
+const fltr_popup = document.getElementById("chat-popup");
 const filter_anon = document.getElementById("filter-anon");
 const filter_anon_toggle = filter_anon.children[1];
 const ba_blank = document.getElementById("ba_blank");
@@ -1255,10 +1320,20 @@ const paste_preview = document.getElementById("paste-preview-btn");
 const paste_preview_toggle = paste_preview.children[1];
 const pastePreviewHeader = document.getElementById("paste-preview-options");
 const close_button_paste_preview = document.getElementById("close-button-paste-preview");
+const emo_container = document.getElementById("emo-container");
+const emo_toggle = emojiBTN.children[0];
+const filter_popup_content = document.getElementById("filter-popup-content");
+
+function togglePopup() {
+  const hide = (filter_popup_content.classList.contains("hidden") == false || emo_container.classList.contains("hidden") == false);
+  fltr_popup.classList.toggle("hidden", !hide)
+}
+
 // Toggle filter
 filterToggle.addEventListener('click', () => {
-  doFilter = (flterWnd.classList.contains("hidden"));
+  doFilter = (filter_popup_content.classList.contains("hidden"));
   resetChat();
+
 });
 
 // Get the elements
@@ -1325,6 +1400,20 @@ function setCoordsVisibility() {
   clipboard_container.classList.toggle("hidden", setHidden_Coords);
 }
 
+emojiBTN.addEventListener('click', () => {
+  toggle(emo_container);
+
+  if (emo_container.classList.contains("hidden")) {
+    emo_toggle.classList.remove("fa-star");
+    emo_toggle.classList.add("fa-star-half-alt");
+    emo_toggle.style.color = ""
+  } else {
+    emo_toggle.classList.remove("fa-star-half-alt");
+    emo_toggle.classList.add("fa-star");
+    emo_toggle.style.color = "yellow"
+  }
+  togglePopup();
+})
 
 url_paste_btn.addEventListener('click', () => {
   toggle(url_paste_options);
@@ -1358,8 +1447,9 @@ hide_canvas_btn.addEventListener('click', () => {
 })
 
 fltr_btn.addEventListener('click', () => {
-  toggle(fltr_popup);
-  toggleIcon(fltr_btn_toggle, fltr_popup)
+  toggle(filter_popup_content);
+  toggleIcon(fltr_btn_toggle, filter_popup_content);
+  togglePopup();
 })
 
 filter_anon.addEventListener('click', () => {
@@ -1481,8 +1571,8 @@ function CellToPixelCoords(tileX, tileY, charX, charY) {
     // If the first argument is an array, destructure the values
     [tileX, tileY, charX, charY] = tileX;
   }
-tileX /=2;
-tileY /=2;   
+  tileX /= 2;
+  tileY /= 2;
   // calculate in-tile cell position
   var charXInTile = tileX * tileC + charX;
   var charYInTile = tileY * tileR + charY;
@@ -1498,7 +1588,7 @@ function eraseSelectionStart(start, end, width, height) {
   renderCursor(start)
   w.eraseSelect.stopSelectionUI(true)
   let [pageX, pageY] = CellToPixelCoords(start)
-  
+
   eraseEvent.pageX = pageX;
   eraseEvent.pageY = pageY;
   event_mouseup(eraseEvent, pageX, pageY);
@@ -1797,9 +1887,6 @@ function textcode_parser(value, coords, defaultColor, defaultBgColor) {
     charX: 0,
     charY: 0
   };
-
-
-
 
   var next = function() {
 
@@ -2142,7 +2229,7 @@ if (chatOpen !== true) {
 }
 chat_open.classList.add("hidden");
 chat_window.style.left = "2.1em";
-resizeChat(600);
+resizeChat(600, 400)
 chat_close.outerHTML = "<div></div>"
 
 
@@ -2558,10 +2645,10 @@ w.on("cursorMove", function(e) {
   const x = e.charX;
   const y = e.charY;
   const [cpX, cpY] = CellToPixelCoords(X, Y, x, y);
-console.log(cpX, cpY)
-  demoCanv.style.left = cpX/zoomRatio + "px";
-  demoCanv.style.top = cpY/zoomRatio + "px";
-	demoCanv.style.transform = `scale(${1/zoomRatio})`
+  console.log(cpX, cpY)
+  demoCanv.style.left = cpX / zoomRatio + "px";
+  demoCanv.style.top = cpY / zoomRatio + "px";
+  demoCanv.style.transform = `scale(${1/zoomRatio})`
   if (showPastePreview) {
     PasteClipboardPreview();
   }
@@ -2667,7 +2754,7 @@ function renderPreviewChar(textRender, posX, posY, char, color, link, writabilit
     if (isItalic) tempFont = "italic " + tempFont;
     textRender.font = tempFont;
   }
-textRender.font = fontTemplate.replace("$", normFontSize(16 * zoom));
+  textRender.font = fontTemplate.replace("$", normFontSize(16 * zoom));
   textRender.fillText(char, Math.round(fontX + XPadding), Math.round(fontY + textYOffset));
   if (prevFont) {
     textRender.font = prevFont;
@@ -2750,7 +2837,6 @@ function renderString(str) {
   // pass 2: text data
   for (var i = 0; i < renderChars.length; i++) {
     var cell = renderChars[i];
-
     var posX = cell[0];
     var posY = cell[1];
     var char = cell[2];
@@ -2764,3 +2850,39 @@ function renderString(str) {
     renderPreviewChar(demoCtx, posX, posY, char, color, link, prot);
   }
 }
+
+function createGrid(emoteList) {
+  const gridContainer = document.getElementById('emo-gridContainer');
+
+  Object.entries(emoteList).forEach(([value, [start, length]], index) => {
+    const emo_position = value.substring(start, start + length);
+    const button = document.createElement('button');
+    button.className = 'emo-button';
+    button.name = 'emo-button-' + index;
+    button.value = JSON.stringify([start, length]);
+    const label = document.createElement('label');
+    label.className = 'chat_emote';
+    label.textContent = '';
+    label.setAttribute('for', 'emo-button-' + index);
+    label.style.backgroundPositionX = `-${start}px`
+    label.title = value;
+    label.style.width = `${length}px`
+    label.addEventListener("click", function() {
+      elm.chatbar.value += `:${value}:`;
+    })
+
+
+    gridContainer.appendChild(button);
+    gridContainer.appendChild(label);
+
+    // Load image and show button when image is loaded
+    const image = new Image();
+    image.onload = function() {
+      button.style.backgroundImage = `url('${emo_position}')`;
+      button.style.display = 'inline-block';
+    };
+    image.src = emo_position;
+  });
+}
+
+createGrid(emoteList);
