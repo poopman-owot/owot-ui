@@ -11,6 +11,80 @@ function resetChat() {
   network.chathistory();
 }
 
+
+
+function createColorElement(color, index) {
+  var container = document.createElement('div');
+  container.className = 'container';
+  var clickCount = 0;
+  var clickTimer;
+  var label = document.createElement('label');
+  label.htmlFor = 'custom-color' + index;
+  label.className = 'label';
+  label.classList.add("btn");
+  var input = document.createElement('input');
+  input.id = 'custom-color' + index;
+  input.type = 'color';
+
+  input.className = 'sidebar-button';
+  input.classList.add("hidden");
+  input.addEventListener('change', function() {
+    label.style.backgroundColor = input.value;
+  });
+  input.value = color;
+  label.style.backgroundColor = input.value;
+  // Add event listeners for click and double click
+  label.addEventListener('contextmenu', function(event) {
+    event.preventDefault();
+
+    backgroundColorPicker.value = input.value;
+    const selectedColor = backgroundColorPicker.value;
+    const rgbColor = hexToRgb(selectedColor);
+    YourWorld.BgColor = rgbColor;
+
+
+  })
+  label.addEventListener('click', function(event) {
+    event.preventDefault();
+    if (event.button === 0) {
+      // Left click
+      clickCount++;
+      if (clickCount === 1) {
+        // First click
+        clickTimer = setTimeout(function() {
+          // Single click logic here
+          const selectedColor = input.value;
+          foregroundColorPicker.value = input.value;
+          const rgbColor = hexToRgb(selectedColor);
+          YourWorld.Color = rgbColor;
+
+
+          clickCount = 0;
+        }, 200); // Adjust the delay (in milliseconds) between clicks
+      } else if (clickCount === 2) {
+        // Second click
+        clearTimeout(clickTimer);
+        // Double click logic here
+
+        clickCount = 0;
+        input.click();
+      }
+
+
+
+    }
+  });
+
+  label.addEventListener('dblclick', function() {
+    input.click();
+  });
+
+  container.appendChild(label);
+  container.appendChild(input);
+
+  return container;
+}
+
 function shouldFilter(message, type, hasTagDom, nickname, id, realUsername) {
   const filterAnons = filter_anon_toggle.classList.contains("fa-toggle-on");
   if (hasTagDom) {
@@ -117,6 +191,7 @@ var pm_ui_html = `
         </div>
       </div>
     </div>
+
     <div class="container">
       <button class="sidebar-button" id="text-btn"><i class="fas fa-font"></i></button>
       <div class="container-bg">
@@ -173,6 +248,15 @@ var pm_ui_html = `
       </div>
 
     </div>
+
+    <div class="container">
+      <button class="sidebar-button" id="open-pallet-btn"><i class="fas fa-palette"></i></button>
+      <div class="container-bg">
+        <div class="popup-panel">
+          <div class="btn panel-header" id="open-pallet-btn-popup">Toggle Pallet</div>
+        </div>
+      </div>
+</div>
     <div class="hairline"></div>
 
     <div class="container">
@@ -194,7 +278,7 @@ var pm_ui_html = `
     </div>
 
     <div class="container">
-      <button class="sidebar-button" id="drag-btn"> <i class="fas fa-clipboard"></i></button>
+      <button class="sidebar-button" id="clip-btn"> <i class="fas fa-clipboard"></i></button>
       <div class="container-bg">
         <div class="popup-panel">
           <div class="panel-header">Clipboard Settings</div>
@@ -219,8 +303,12 @@ var pm_ui_html = `
     </div>
 
    
-     
+<div id="color-pallet-container" class= "hidden">
 
+
+<div class="container" id="close-pallet-btn">
+<i class="btn fas fa-times"></i>
+</div>
 
 
 
@@ -1185,6 +1273,33 @@ cursor:pointer
 #emo-container{
 margin-bottom:2em;
 }
+#color-pallet-container {
+    position: fixed;
+    top: 0px;
+    left: 2em;
+    height: 100vh;
+    width: 2em;
+    background-color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 3em;
+    z-index: -1;
+    border-left: 2px solid #1d1d1d;
+    flex-wrap: wrap;
+    align-content: center;
+}
+#color-pallet-container .label {
+    display: block;
+    width: 1em;
+    height: 1em;
+    border-radius: 100%;
+    border: 1px solid #4d4d4d;
+}
+#color-pallet-container .container {
+    margin-top: 0.42em;
+}
 `
 
 var pm_stylesheet = document.createElement("style");
@@ -1260,6 +1375,7 @@ const globalPage = document.getElementById('global-page');
 const filterToggle = document.getElementById('filter-toggle');
 const themeToggleButton = document.getElementById('theme-toggle-button');
 const content = document.querySelector('.content');
+const chat_btn = document.getElementById("chat-btn");
 const show_chat_btn = document.getElementById("show-chat-btn");
 const chatbox_container = document.getElementsByClassName("chat-box")[0]
 const chatbox_toggle = show_chat_btn.children[1];
@@ -1295,9 +1411,11 @@ const cell_data_btn = document.getElementById("cell-data-btn");
 const cell_data_toggle = cell_data_btn.children[1];
 const cell_data_container = document.getElementsByClassName("cell-data-container")[0];
 const goto_coords_btn = document.getElementById("goto-coords-btn");
+const move_btn = document.getElementById("move-btn");
 const coord_link_btn = document.getElementById("coords-link-btn");
 const warp_btn = document.getElementById("warp-btn");
 const region_select_btn = document.getElementById("region-select-btn");
+const region_btn = document.getElementById("region-btn");
 const protect_btn = document.getElementById("protect-btn");
 const protect_btn_toggle = protect_btn.children[1];
 const area_protect_options = document.getElementById("area-protect-options");
@@ -1317,12 +1435,52 @@ const url_paste_input = document.getElementById("url-paste-input");
 const close_url_paste = document.getElementById("close-url-paste");
 const url_paste_options = document.getElementById("url-paste-options")
 const paste_preview = document.getElementById("paste-preview-btn");
+const clip_btn = document.getElementById("clip-btn");
 const paste_preview_toggle = paste_preview.children[1];
 const pastePreviewHeader = document.getElementById("paste-preview-options");
 const close_button_paste_preview = document.getElementById("close-button-paste-preview");
 const emo_container = document.getElementById("emo-container");
 const emo_toggle = emojiBTN.children[0];
 const filter_popup_content = document.getElementById("filter-popup-content");
+const sidebar = document.getElementsByClassName("sidebar")[0];
+
+const color_pallet_container = document.getElementById("color-pallet-container");
+const open_pallet_btn = document.getElementById("open-pallet-btn");
+const open_pallet_btn_popup = document.getElementById("open-pallet-btn-popup");
+const close_pallet_btn = document.getElementById("close-pallet-btn");
+
+open_pallet_btn.addEventListener('click', () => {
+  toggle(color_pallet_container)
+})
+open_pallet_btn_popup.addEventListener('click', () => {
+  open_pallet_btn.click();
+})
+
+close_pallet_btn.addEventListener('click', () => {
+  open_pallet_btn.click();
+})
+
+function createColorPalette() {
+  var customColors = ['#000', "#ffffff", '#fefe33', '#fabc02', "#fd5308", "#fe2712", "#a7194b", "#8601af", "#3d01a4", "#0247fe", "#0391ce", "#66b032", "#d0ea2b"];
+  for (var i = 0; i < colors.length; i++) {
+    var colorElement = createColorElement(customColors[i], i);
+    color_pallet_container.appendChild(colorElement);
+  }
+  var helpcontainer = document.createElement('div');
+  helpcontainer.className = 'container';
+  helpcontainer.innerHTML = `<i class="btn fas fa-question-circle"></i>`;
+  color_pallet_container.appendChild(helpcontainer);
+  helpcontainer.addEventListener('click', () => {
+    Swal.fire({
+      icon: 'question',
+      html: '<b>Left-click:</b> Set text color<br><b>Right-click:</b> Set background color<br><b>Double-click:</b> Modify pallet color<br>',
+
+      text: 'Something went wrong!\nasdf\nasdf\nasdf',
+    })
+  })
+
+}
+createColorPalette();
 
 function togglePopup() {
   const hide = (filter_popup_content.classList.contains("hidden") == false || emo_container.classList.contains("hidden") == false);
@@ -1427,11 +1585,18 @@ show_chat_btn.addEventListener('click', () => {
   toggleIcon(chatbox_toggle, elm.chat_window);
 
 })
+chat_btn.addEventListener('click', () => {
+  show_chat_btn.click();
+
+})
 paste_preview.addEventListener('click', () => {
   toggle(pastePreviewHeader);
   toggleIcon(paste_preview_toggle, pastePreviewHeader)
   showPastePreview = !showPastePreview;
   demoCanv.classList.toggle("hidden", !showPastePreview)
+})
+clip_btn.addEventListener('click', () => {
+  paste_preview.click();
 })
 close_button_paste_preview.addEventListener('click', () => {
   paste_preview.click();
@@ -1509,8 +1674,14 @@ warp_btn.addEventListener('click', () => {
 region_select_btn.addEventListener('click', () => {
   w.regionSelect.startSelection();
 })
+region_btn.addEventListener('click', () => {
+  region_select_btn.click();
+})
 goto_coords_btn.addEventListener('click', () => {
   w.goToCoord()
+})
+move_btn.addEventListener('click', () => {
+  goto_coords_btn.click();
 })
 coord_link_btn.addEventListener('click', () => {
   w.coordLink()
@@ -1810,8 +1981,12 @@ copy_page_coords_btn.addEventListener("click", function() {
 });
 const font_style_btn = document.getElementById("font-style-btn");
 const font_style_toggle = font_style_btn.children[1];
+const text_btn = document.getElementById("text-btn");
 font_style_btn.addEventListener("click", function() {
   toggleTextDecoBar();
+})
+text_btn.addEventListener("click", function() {
+  font_style_btn.click();
 })
 
 function toggleTextDecoBar() {
