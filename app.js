@@ -11,8 +11,6 @@ function resetChat() {
   network.chathistory();
 }
 
-
-
 function createColorElement(color, index) {
   var container = document.createElement('div');
   container.className = 'container';
@@ -69,9 +67,6 @@ function createColorElement(color, index) {
         clickCount = 0;
         input.click();
       }
-
-
-
     }
   });
 
@@ -199,7 +194,6 @@ var pm_ui_html = `
           <div class="panel-header">Text Tool</div>
           <ul class="icon-list">
             <li class="btn hidden" id="font-large-btn"><i class="fas fa-expand-alt"></i>Large Font<i class="fas fa-toggle-off"></i></li>
-            <li class="btn hidden" id="font-rainbow-btn"><i class="fas fa-rainbow"></i>Rainbow Text<i class="fas fa-toggle-off"></i></li>
             <li class="btn" id="font-style-btn"><i class="fas fa-italic"></i>Show Font Styles<i class="fas fa-toggle-off"></i></li>
             <li class="btn hidden" id="font-change-btn"><i class="fas fa-heading"></i>Change Font<i class="fas fa-check invisible"></i></li>
           </ul>
@@ -216,14 +210,13 @@ var pm_ui_html = `
           <ul class="icon-list">
             <li class="btn" id="color-forground-btn"><i class="fas fa-palette"></i>Pick Custom Color<i class="fas fa-check invisible"></i></li>
             <li class="btn hidden" id="color-forground-dropper-btn"><i class="fas fa-eye-dropper"></i>Use Eyedropper<i class="fas fa-check invisible"></i></li>
-            <li class="color-list hidden"><i style="color: black" class="fas fa-square"></i><i style="color: white" class="fas fa-square"></i><i style="color: red" class="fas fa-square"></i><i style="color: orange" class="fas fa-square"></i><i style="color: yellow" class="fas fa-square"></i><i style="color: green" class="fas fa-square"></i><i style="color: blue" class="fas fa-square"></i><i style="color: purple" class="fas fa-square"></i></li>
-
+            <li class="btn" id="random-forground-btn"><i class="fas fa-random"></i>Randomize<i class="fas fa-toggle-off"></i></li>
           </ul>
         </div>
       </div>
     </div>
     <div class="container">
-      <button class="sidebar-button" id="switch-btn"><i class="fas fa-random"></i></button>
+      <button class="sidebar-button" id="switch-btn" ><i style = "transform: rotate(90deg);"class="fas fa-exchange-alt"></i></button>
       <div class="container-bg">
         <div class="popup-panel">
           <div class="btn panel-header" id="color-switch-btn">Switch Colors</div>
@@ -240,8 +233,7 @@ var pm_ui_html = `
             <ul class="icon-list">
               <li class="btn" id="color-background-btn"><i class="fas fa-palette"></i>Pick Custom Color<i class="fas fa-check invisible"></i></li>
               <li class="btn hidden" id="color-background-dropper-btn"><i class="fas fa-eye-dropper"></i>Use Eyedropper<i class="fas fa-check invisible"></i></li>
-              <li class="color-list hidden"><i style="color: black" class="fas fa-square"></i><i style="color: white" class="fas fa-square"></i><i style="color: red" class="fas fa-square"></i><i style="color: orange" class="fas fa-square"></i><i style="color: yellow" class="fas fa-square"></i><i style="color: green" class="fas fa-square"></i><i style="color: blue" class="fas fa-square"></i><i style="color: purple" class="fas fa-square"></i></li>
-
+							<li class="btn" id="random-bg-btn"><i class="fas fa-random"></i>Randomize<i class="fas fa-toggle-off"></i></li>
             </ul>
           </div>
         </div>
@@ -345,6 +337,10 @@ var pm_ui_html = `
 </div>
 <div class = "tool-options hidden" id ="paste-preview-options"> <button class="close-button" id="close-button-paste-preview"><i class="fas fa-times"> </i> Cancel Preview</button>
 </div>
+<div class = "tool-options hidden" id ="random-fg-options"> <button class="close-button" id="close-random-fg"><i class="fas fa-times"> </i> Cancel Random Foreground</button>
+</div>
+<div class = "tool-options hidden" id ="random-bg-options"> <button class="close-button" id="close-random-bg"><i class="fas fa-times"> </i> Cancel Random Background</button>
+</div>
     <div class = "tool-options hidden" id ="url-paste-options"> <button class="close-button" id="close-url-paste"><i class="fas fa-times"> </i> Cancel URL Writer</button>
  <input id = "url-paste-input" placeholder="Enter URL">
 </div>
@@ -359,7 +355,7 @@ var pm_ui_html = `
       <script src="script.js"></script>
     </div>
   </div>
-  <div id="info-bar">
+  <div id="info-bar" class ="hidden">
     <div class="clipboard-container hidden">
       <div class="clipboard-row">
         <h3>Coords</h3>
@@ -1449,6 +1445,58 @@ const open_pallet_btn = document.getElementById("open-pallet-btn");
 const open_pallet_btn_popup = document.getElementById("open-pallet-btn-popup");
 const close_pallet_btn = document.getElementById("close-pallet-btn");
 
+const random_forground_btn = document.getElementById("random-forground-btn");
+const random_forground_toggle = random_forground_btn.children[1];
+const random_fg_options = document.getElementById("random-fg-options");
+const close_random_fg = document.getElementById("close-random-fg");
+
+const random_background_btn = document.getElementById("random-bg-btn");
+const random_background_toggle = random_background_btn.children[1];
+const random_bg_options = document.getElementById("random-bg-options");
+const close_random_bg = document.getElementById("close-random-bg");
+
+
+var randomize_fg;
+var randomize_bg;
+random_forground_btn.addEventListener('click', () => {
+  toggle(random_fg_options);
+  toggleIcon(random_forground_toggle, random_fg_options);
+  const randomize = random_forground_toggle.classList.contains("fa-toggle-on");
+  if (randomize) {
+    randomize_fg = setInterval(function() {
+      const random_Color = randomColor(false);
+      foregroundColorPicker.value = random_Color;
+      YourWorld.Color = hexToRgb(random_Color)
+    }, 10);
+  } else {
+    clearInterval(randomize_fg);
+    randomize_fg = 0;
+  }
+})
+
+random_background_btn.addEventListener('click', () => {
+  toggle(random_bg_options);
+  toggleIcon(random_background_toggle, random_bg_options);
+  const randomize = random_background_toggle.classList.contains("fa-toggle-on");
+  if (randomize) {
+    randomize_bg = setInterval(function() {
+      const random_Color = randomColor(true);
+      backgroundColorPicker.value = random_Color;
+      YourWorld.BgColor = hexToRgb(random_Color)
+    }, 10);
+  } else {
+    clearInterval(randomize_bg);
+    randomize_bg = 0;
+  }
+})
+
+close_random_fg.addEventListener('click', () => {
+  random_forground_btn.click();
+})
+close_random_bg.addEventListener('click', () => {
+  random_background_btn.click();
+})
+
 open_pallet_btn.addEventListener('click', () => {
   toggle(color_pallet_container)
 })
@@ -1556,8 +1604,13 @@ function addList(ele) {
 function setCoordsVisibility() {
   const setHidden_Coords = !(cursor_coords_container.classList.contains("hidden") == false || page_coords_container.classList.contains("hidden") == false)
   clipboard_container.classList.toggle("hidden", setHidden_Coords);
+  setInfoBarVisibility();
 }
 
+function setInfoBarVisibility() {
+  const setHidden = !(clipboard_container.classList.contains("hidden") == false || shortcuts_container.classList.contains("hidden") == false || cell_data_container.classList.contains("hidden") == false)
+  info_bar.classList.toggle("hidden", setHidden);
+}
 emojiBTN.addEventListener('click', () => {
   toggle(emo_container);
 
@@ -1638,6 +1691,7 @@ page_coords_btn.addEventListener('click', () => {
 shortcuts_btn.addEventListener('click', () => {
   toggle(shortcuts_container);
   toggleIcon(shortcuts_toggle, shortcuts_container);
+  setInfoBarVisibility();
 })
 
 blacklist_btn.addEventListener('click', () => {
@@ -1667,6 +1721,7 @@ cell_data_btn.addEventListener('click', () => {
   toggle(cell_data_container);
   toggleIcon(cell_data_toggle, cell_data_container);
   setCoordsVisibility();
+  setInfoBarVisibility();
 })
 warp_btn.addEventListener('click', () => {
   w.ui.warpModal.open();
@@ -1883,7 +1938,37 @@ function hexToRgb(hex) {
   const colorInt = rgb_to_int(red, green, blue);
   return colorInt;
 }
+const randomColor = ((dark) => {
+  "use strict";
 
+  const randomInt = (min, max) => {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  };
+
+  function hslToHex(h, s, l) {
+    l /= 100;
+    const a = s * Math.min(l, 1 - l) / 100;
+    const f = n => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color).toString(16).padStart(2, '0'); // convert to Hex and prefix "0" if needed
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+  }
+  return () => {
+    var h = randomInt(0, 360);
+    var s = randomInt(42, 98);
+
+
+    var l = dark ? randomInt(0, 39) : randomInt(40, 90);
+
+
+    return hslToHex(h, s, l);
+  };
+
+
+
+})();
 backgroundColorPickerBtn.addEventListener("click", function() {
   backgroundColorPicker.click();
 });
