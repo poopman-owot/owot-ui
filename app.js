@@ -3,6 +3,7 @@ var chatOpened = (chatOpen == true) ? "fa-toggle-on" : "fa-toggle-off";
 var showPastePreview = false;
 var previewText = "";
 var demoCanv = document.createElement("canvas");
+var showTileCoords = false;
 
 function resetChat() {
   while (page_chatfield.firstChild) {
@@ -262,7 +263,7 @@ var pm_ui_html = `
             <li class="btn" id="subgrid-btn"><i class="fas fa-th"></i>Show Subgrid<i class="fas fa-toggle-off"></i></li>
             <li class="btn" id="page-coords-btn"><i class="fas fa-map"></i>Show Page Coords<i class="fas fa-toggle-off"></i></li>
             <li class="btn" id="cursor-coords-btn"><i class="fas fa-mouse-pointer"></i>Show Cursor Coords<i class="fas fa-toggle-off"></i></li>
-            <li class="btn hidden" id="grid-coords-btn"><i class="fas fa-border-all"></i>Show Grid Coords<i class="fas fa-toggle-off"></i></li>
+            <li class="btn" id="grid-coords-btn"><i class="fas fa-border-all"></i>Show Grid Coords<i class="fas fa-toggle-off"></i></li>
             <li class="btn" id="shortcuts-btn"><i class="fas fa-keyboard"></i>Show Shortcuts<i class="fas fa-toggle-off"></i></li>
           </ul>
         </div>
@@ -1454,6 +1455,20 @@ const random_background_btn = document.getElementById("random-bg-btn");
 const random_background_toggle = random_background_btn.children[1];
 const random_bg_options = document.getElementById("random-bg-options");
 const close_random_bg = document.getElementById("close-random-bg");
+
+const grid_coords_btn = document.getElementById("grid-coords-btn");
+const grid_coords_toggle = grid_coords_btn.children[1];
+
+grid_coords_btn.addEventListener('click', () => {
+  showTileCoords = grid_coords_toggle.classList.contains("fa-toggle-off");
+  if (showTileCoords) {
+    gridEnabled = true;
+    toggleIconBool(grid_toggle, true);
+  }
+  w.redraw(true);
+  toggleIconBool(grid_coords_toggle, showTileCoords);
+
+})
 
 
 var randomize_fg;
@@ -3146,3 +3161,131 @@ function createGrid(emoteList) {
 }
 
 createGrid(emoteList);
+
+function drawTile(tileX, tileY) {
+  var tile = Tile.get(tileX, tileY);
+  if (!tile) return;
+
+  var hasDrawn = false;
+
+  var tileScreenPos = getTileScreenPosition(tileX, tileY);
+  var offsetX = Math.floor(tileScreenPos[0]);
+  var offsetY = Math.floor(tileScreenPos[1]);
+
+  var clamp = getTileScreenPosition(tileX + 1, tileY + 1);
+  var clampW = Math.floor(clamp[0]) - offsetX;
+  var clampH = Math.floor(clamp[1]) - offsetY;
+
+  if (transparentBackground) {
+    textRenderCtx.clearRect(0, 0, textRenderCanvas.width, textRenderCanvas.width);
+  } else {
+    var cursorVisibility = cursorRenderingEnabled && cursorCoords && cursorCoords[0] == tileX && cursorCoords[1] == tileY;
+    var dBack = renderTileBackground(textRenderCtx, 0, 0, tile, tileX, tileY, cursorVisibility);
+    if (dBack) {
+      hasDrawn = true;
+    }
+  }
+
+  if (backgroundEnabled) {
+    var dImage = renderTileBackgroundImage(textRenderCtx, tileX, tileY, 0, 0);
+    if (dImage) {
+      hasDrawn = true;
+    }
+  }
+
+  if (colorsEnabled) {
+    var dCell = renderCellBgColors(textRenderCtx, tileX, tileY, clampW, clampH);
+    if (dCell) {
+      hasDrawn = true;
+    }
+  }
+
+  if (!bufferLargeChars) {
+    var dCont = renderContent(textRenderCtx, tileX, tileY, clampW, clampH, 0, 0);
+    if (dCont) {
+      hasDrawn = true;
+    }
+  } else {
+    var d1 = renderContent(textRenderCtx, tileX - 1, tileY, clampW, clampH, clampW * -1, 0, [tileC - 1, 0, tileC - 1, tileR - 1], true); // left
+    var d2 = renderContent(textRenderCtx, tileX, tileY, clampW, clampH, 0, 0); // main
+    var d3 = renderContent(textRenderCtx, tileX - 1, tileY + 1, clampW, clampH, clampW * -1, clampH * 1, [tileC - 1, 0, tileC - 1, 0], true); // bottom-left corner
+    var d4 = renderContent(textRenderCtx, tileX, tileY + 1, clampW, clampH, 0, clampH * 1, [0, 0, tileC - 1, 0], true); // bottom
+    if (d1 || d2 || d3 || d4) {
+      hasDrawn = true;
+    }
+  }
+
+  if (gridEnabled) {
+    var gridColor = int_to_hexcode(0xFFFFFF - resolveColorValue(getTileBackgroundColor(tile)));
+    drawGrid(textRenderCtx, gridColor, 0, 0, tileX, tileY);
+    hasDrawn = true;
+  }
+
+  if (hasDrawn) {
+    var tileImage = loadTileFromPool(tileX, tileY);
+    var poolCtx = tileImage.pool.ctx;
+    var poolCanv = tileImage.pool.canv;
+    var poolX = tileImage.poolX;
+    var poolY = tileImage.poolY;
+
+    tileImage.clampW = clampW;
+    tileImage.clampH = clampH;
+
+    if (bgImageHasChanged) {
+      testCanvasForCrossOriginError();
+      bgImageHasChanged = false;
+    }
+
+    // we read a single pixel to force the browser to draw immediately,
+    // since we want to precisely control the timing for the queue
+    if (canBypassRenderDefer) {
+      textRenderCtx.getImageData(0, 0, 1, 1);
+    }
+
+    poolCtx.clearRect(poolX, poolY, tileWidth, tileHeight);
+    poolCtx.drawImage(textRenderCanvas, 0, 0, tileWidth, tileHeight, poolX, poolY, tileWidth, tileHeight);
+  } else {
+    markTileFromPoolAsEmpty(tileX, tileY);
+  }
+}
+
+
+function drawGrid(renderCtx, gridColor, offsetX, offsetY, tileX, tileY) {
+
+  var tileLocation = tileX + ", " + tileY + "";
+  if (subgridEnabled && zoom >= 0.3) {
+    var b = 0xB9;
+    if (zoom < 0.5) {
+      b += (0xFF - b) * (0.5 - zoom) * 2;
+    }
+    b = Math.floor(b);
+    renderCtx.strokeStyle = "rgb(" + b + ", " + b + ", " + b + ")";
+    var dashSize = 1;
+    renderCtx.setLineDash([dashSize]);
+    renderCtx.lineWidth = dashSize;
+    for (var x = 1; x < tileC; x++) {
+      for (var y = 1; y < tileR; y++) {
+        renderCtx.beginPath();
+        renderCtx.moveTo(0, Math.floor(y * cellH) + 0.5);
+        renderCtx.lineTo(tileW, Math.floor(y * cellH) + 0.5);
+        renderCtx.stroke();
+      }
+      renderCtx.beginPath();
+      renderCtx.moveTo(Math.floor(x * cellW) + 0.5, 0);
+      renderCtx.lineTo(Math.floor(x * cellW) + 0.5, tileH);
+      renderCtx.stroke();
+    }
+  }
+
+  if (showTileCoords) {
+    renderCtx.fillStyle = "rgba(128,128,128,0.8)";
+    renderCtx.fillRect(0, 0, cellW * tileLocation.length, cellH);
+    renderCtx.textBaseline = "bottom";
+    renderCtx.fillStyle = "white";
+    renderCtx.fillText(tileLocation, 0, cellH);
+  }
+  renderCtx.fillStyle = gridColor;
+  renderCtx.fillRect(Math.floor(offsetX), Math.floor(offsetY), tileWidth, 1);
+  renderCtx.fillRect(Math.floor(offsetX), Math.floor(offsetY), 1, tileHeight);
+  renderCtx.textBaseline = "alphabetic";
+}
