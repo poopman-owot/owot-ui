@@ -484,258 +484,243 @@ whitelist_btn.addEventListener('click', () => {
 chat_close.outerHTML = "<div></div>"
 
 
+
 function addChat(chatfield, id, type, nickname, message, realUsername, op, admin, staff, color, date, dataObj) {
+	if(!dataObj) dataObj = {};
+	if(!message) message = "";
+	if(!realUsername) realUsername = "";
+	if(!nickname) nickname = realUsername;
+	if(!color) color = assignColor(nickname);
+	var dateStr = "";
+	if(date) dateStr = convertToDate(date);
+	var field = evaluateChatfield(chatfield);
+	var pm = dataObj.privateMessage;
+	var isGreen = false;
 
-  var chatGroup = document.createElement("div");
-  var nameContainer = document.createElement("span");
+	if(chatGreentext && message[0] == ">" && !(":;_-".includes(message[1]))) { // exception to some emoticons
+		message = message.substr(1);
+		isGreen = true;
+	}
 
-  if (!dataObj) dataObj = {};
-  if (!message) message = "";
-  if (!realUsername) realUsername = "";
-  if (!nickname) nickname = realUsername;
-  if (!color) color = assignColor(nickname);
-  var dateStr = "";
-  if (date) dateStr = convertToDate(date);
-  var field = evaluateChatfield(chatfield);
-  var pm = dataObj.privateMessage;
-  var isGreen = false;
+	if(chatLimitCombChars) {
+		message = filterChatMessage(message);
+		nickname = filterChatMessage(nickname);
+	}
 
-  if (chatGreentext && message[0] == ">" && !(":;_-".includes(message[1]))) { // exception to some emoticons
-    message = message.substr(1);
-    isGreen = true;
-  }
+	if(!op) {
+		message = html_tag_esc(message);
+		nickname = html_tag_esc(nickname);
+	}
 
-  if (chatLimitCombChars) {
-    message = filterChatMessage(message);
-    nickname = filterChatMessage(nickname);
-  }
+	// do not give the tag to [ Server ]
+	var hasTagDom = (op || admin || staff || dataObj.rankName) && !(!id && op);
 
-  if (!op) {
-    message = html_tag_esc(message);
-    nickname = html_tag_esc(nickname);
-  }
+	var tagDom;
+	var nickTitle = [];
+	var usernameHasSpecialChars = false;
 
-  // do not give the tag to [ Server ]
-  var hasTagDom = (op || admin || staff || dataObj.rankName) && !(!id && op);
-  var tagDom;
-  var nickTitle = [];
-  var usernameHasSpecialChars = false;
+	for(var i = 0; i < realUsername.length; i++) {
+		if(realUsername.charCodeAt(i) > 256) {
+			usernameHasSpecialChars = true;
+			break;
+		}
+	}
 
-  for (var i = 0; i < realUsername.length; i++) {
-    if (realUsername.charCodeAt(i) > 256) {
-      usernameHasSpecialChars = true;
-      break;
-    }
-  }
+	if(type == "user" || type == "user_nick") {
+		nickTitle.push("ID " + id);
+	}
 
-  if (type == "user" || type == "user_nick") {
-    nickTitle.push("ID " + id);
-  }
+	if(hasTagDom) {
+		tagDom = document.createElement("span");
+		if(dataObj.rankName) {
+			tagDom.innerHTML = "(" + dataObj.rankName + ")";
+			tagDom.style.color = dataObj.rankColor;
+			tagDom.style.fontWeight = "bold";
+			nickTitle.push(dataObj.rankName);
+		} else if(op) {
+			tagDom.innerHTML = "(OP)";
+			tagDom.style.color = "#0033cc";
+			tagDom.style.fontWeight = "bold";
+			nickTitle.push("Operator");
+		} else if(admin) {
+			tagDom.innerHTML = "(A)";
+			tagDom.style.color = "#FF0000";
+			tagDom.style.fontWeight = "bold";
+			nickTitle.push("Administrator");
+		} else if(staff) {
+			tagDom.innerHTML = "(M)";
+			tagDom.style.color = "#009933";
+			tagDom.style.fontWeight = "bold";
+			nickTitle.push("Staff");
+		}
+		tagDom.innerHTML += "&nbsp;";
+	}
 
-  if (hasTagDom) {
-    tagDom = document.createElement("span");
-    if (dataObj.rankName) {
-      tagDom.innerHTML = "(" + dataObj.rankName + ")";
-      tagDom.style.fontWeight = "bold";
-      nickTitle.push(dataObj.rankName);
-      nameContainer.style.outline = `4px solid ${dataObj.rankColor}`;
-    } else if (op) {
-      tagDom.innerHTML = "(OP)";
-      tagDom.style.fontWeight = "bold";
-      nickTitle.push("Operator");
-      nameContainer.style.outline = "4px solid #0033cc";
-    } else if (admin) {
-      tagDom.innerHTML = "(A)";
-      tagDom.style.fontWeight = "bold";
-      nickTitle.push("Administrator");
-      nameContainer.style.outline = "4px solid #FF0000";
-    } else if (staff) {
-      tagDom.innerHTML = "(M)";
-      tagDom.style.fontWeight = "bold";
-      nickTitle.push("Staff");
-      nameContainer.style.outline = "4px solid #009933";
-    }
-    tagDom.style.color = "white";
-    tagDom.innerHTML += "&nbsp;";
-  }
+	var idTag = "";
 
-  var idTag = "";
+	var nickDom = document.createElement("a");
+	nickDom.style.textDecoration = "underline";
 
-  var nickDom = document.createElement("a");
-  nickDom.style.textDecoration = "none";
+	if(type == "user") {
+		nickDom.style.color = color;
+		if(!usernameHasSpecialChars) {
+			nickDom.style.fontWeight = "bold";
+		}
+		nickDom.style.pointerEvents = "default";
+		if(state.userModel.is_operator) idTag = "[" + id + "]";
+	}
+	if(type == "anon_nick") {
+		idTag = "[*" + id + "]"
+	}
+	if(type == "anon") {
+		idTag = "[" + id + "]"
+	}
+	if(type == "user_nick") {
+		nickDom.style.color = color;
+		var impersonationWarning = "";
+		if(usernameHasSpecialChars) {
+			impersonationWarning = " (Special chars)";
+		}
+		nickTitle.push("Username \"" + realUsername + "\"" + impersonationWarning);
+		if(state.userModel.is_operator) idTag = "[*" + id + "]";
+	}
 
-  nameContainer.style.background = color;
+	if(state.userModel.is_operator) {
+		idTag = "<span style=\"color: black; font-weight: normal;\">" + idTag + "</span>"
+	}
 
-  nameContainer.style.padding = "0.3em 1em";
-  nameContainer.style.borderRadius = "1em";
-  nameContainer.style.margin = "0em 1em";
-  nickDom.style.color = "white";
-  nameContainer.style.textShadow = "0px 0px 2px black";
-  if (type == "user") {
+	if(idTag && type != "anon") idTag += "&nbsp;"; // space between id and name
 
+	if(id == 0) {
+		idTag = "";
+		nickname = "<span style=\"background-color: #e2e2e2;\">" + nickname + "</span>";
+	}
 
-    if (!usernameHasSpecialChars) {
-      nickDom.style.fontWeight = "bold";
-    }
-    nickDom.style.pointerEvents = "default";
-    if (state.userModel.is_operator) idTag = "[" + id + "]";
-  }
-  if (type == "anon_nick") {
-    idTag = "*" + id;
-  }
-  if (type == "anon") {
-    idTag = id + "";
-  }
-  if (type == "user_nick") {
-    nickDom.style.color = "white";
-    var impersonationWarning = "";
-    if (usernameHasSpecialChars) {
-      impersonationWarning = " (Special chars)";
-    }
-    nickTitle.push("Username \"" + realUsername + "\"" + impersonationWarning);
-    if (state.userModel.is_operator) idTag = "[*" + id + "]";
-  }
+	nickname = idTag + nickname;
 
-  if (state.userModel.is_operator) {
-    idTag = "<span style=\"color: black; font-weight: normal;\">" + idTag + "</span>"
-  }
+	if(dateStr) nickTitle.push("(" + dateStr + ")");
 
-  if (idTag && type != "anon") idTag += "&nbsp;"; // space between id and name
+	nickDom.innerHTML = nickname + (pm == "to_me" ? "" : ":");
+	if(nickTitle.length) nickDom.title = nickTitle.join("; ");
 
-  if (id == 0) {
-    idTag = "";
-    nickname = "<span style=\"background-color: #e2e2e2;\">" + nickname + "</span>";
-  }
+	var pmDom = null;
+	if(pm) {
+		pmDom = document.createElement("div");
+		pmDom.style.display = "inline";
+		if(pm == "to_me") {
+			pmDom.innerText = " -> Me:";
+		} else if(pm == "from_me") {
+			pmDom.innerText = "Me -> ";
+		}
+	}
 
-  nickname = idTag + nickname;
+	if(isGreen) {
+		message = "<span style=\"color: #789922\">&gt;" + message + "</span>";
+	}
 
-  if (dateStr) nickTitle.push("(" + dateStr + ")");
+	// parse emoticons
+	if(chatEmotes) {
+		var emoteMessage = "";
+		var emoteBuffer = "";
+		var emoteMode = false;
+		var emoteCharset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+		// emotes are case sensitive
+		for(var i = 0; i < message.length; i++) {
+			var chr = message[i];
+			if(chr == ":") {
+				if(emoteBuffer == ":" && emoteMode) { // special case: two consecutive colons
+					emoteMessage += emoteBuffer;
+					continue;
+				}
+				emoteBuffer += chr;
+				if(emoteMode) {
+					var emoteName = emoteBuffer.slice(1, -1);
+					if(emoteList.hasOwnProperty(emoteName)) {
+						var position = emoteList[emoteName];
+						emoteMessage += "<div title=':" + emoteName
+							+ ":' class='chat_emote' style='background-position-x:-" + position[0]
+							+ "px;width:" + position[1] + "px'></div>";
+					} else {
+						emoteMessage += emoteBuffer;
+					}
+					emoteMode = false;
+					emoteBuffer = "";
+				} else {
+					emoteMode = true;
+				}
+			} else if(emoteMode) {
+				emoteBuffer += chr;
+				if(!emoteCharset.includes(chr)) {
+					emoteMode = false;
+					emoteMessage += emoteBuffer;
+					emoteBuffer = "";
+					continue;
+				}
+			} else {
+				emoteMessage += chr;
+			}
+		}
+		if(emoteBuffer) { // leftovers
+			emoteMessage += emoteBuffer;
+		}
+		message = emoteMessage;
+	}
 
-  nickDom.innerHTML = nickname + (pm == "to_me" ? "" : "");
-  if (nickTitle.length) nickDom.title = nickTitle.join("; ");
+	var msgDom = document.createElement("span");
+	msgDom.innerHTML = "&nbsp;" + message;
 
-  var pmDom = null;
-  if (pm) {
-    pmDom = document.createElement("div");
-    pmDom.style.display = "inline";
-    if (pm == "to_me") {
-      pmDom.innerText = " -> Me:";
-    } else if (pm == "from_me") {
-      pmDom.innerText = "Me -> ";
-    }
-  }
-
-  if (isGreen) {
-    message = "<span style=\"color: #789922\">&gt;" + message + "</span>";
-  }
-
-  // parse emoticons
-  if (chatEmotes) {
-    var emoteMessage = "";
-    var emoteBuffer = "";
-    var emoteMode = false;
-    var emoteCharset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    // emotes are case sensitive
-    for (var i = 0; i < message.length; i++) {
-      var chr = message[i];
-      if (chr == ":") {
-        if (emoteBuffer == ":" && emoteMode) { // special case: two consecutive colons
-          emoteMessage += emoteBuffer;
-          continue;
-        }
-        emoteBuffer += chr;
-        if (emoteMode) {
-          var emoteName = emoteBuffer.slice(1, -1);
-          if (emoteList.hasOwnProperty(emoteName)) {
-            var position = emoteList[emoteName];
-            emoteMessage += "<div title=':" + emoteName +
-              ":' class='chat_emote' style='background-position-x:-" + position[0] +
-              "px;width:" + position[1] + "px'></div>";
-          } else {
-            emoteMessage += emoteBuffer;
-          }
-          emoteMode = false;
-          emoteBuffer = "";
-        } else {
-          emoteMode = true;
-        }
-      } else if (emoteMode) {
-        emoteBuffer += chr;
-        if (!emoteCharset.includes(chr)) {
-          emoteMode = false;
-          emoteMessage += emoteBuffer;
-          emoteBuffer = "";
-          continue;
-        }
-      } else {
-        emoteMessage += chr;
-      }
-    }
-    if (emoteBuffer) { // leftovers
-      emoteMessage += emoteBuffer;
-    }
-    message = emoteMessage;
-  }
-
-  var msgDom = document.createElement("span");
-  msgDom.innerHTML = "&nbsp;" + message;
-
-  var maxScroll = field.scrollHeight - field.clientHeight;
-  var scroll = field.scrollTop;
-  var doScrollBottom = false;
-  if (maxScroll - scroll < 20) { // if scrolled at least 20 pixels above bottom
-    doScrollBottom = true;
-  }
-
+	var maxScroll = field.scrollHeight - field.clientHeight;
+	var scroll = field.scrollTop;
+	var doScrollBottom = false;
+	if(maxScroll - scroll < 20) { // if scrolled at least 20 pixels above bottom
+		doScrollBottom = true;
+	}
   if (doFilter) {
     if (shouldFilter(message, type, hasTagDom, nickname, id, realUsername))
       return
   }
+	var chatGroup = document.createElement("div");
+	if(!pm && hasTagDom) chatGroup.appendChild(tagDom);
+	if(pmDom) {
+		if(pm == "to_me") {
+			if(hasTagDom) chatGroup.appendChild(tagDom);
+			chatGroup.appendChild(nickDom);
+			chatGroup.appendChild(pmDom);
+		} else if(pm == "from_me") {
+			chatGroup.appendChild(pmDom);
+			if(hasTagDom) chatGroup.appendChild(tagDom);
+			chatGroup.appendChild(nickDom);
+		}
+	} else {
+		chatGroup.appendChild(nickDom);
+	}
+	chatGroup.appendChild(msgDom);
 
+	field.appendChild(chatGroup);
 
-  chatGroup.appendChild(nameContainer);
-  if (!pm && hasTagDom) nameContainer.appendChild(tagDom);
-  if (pmDom) {
-    if (pm == "to_me") {
-      if (hasTagDom) nameContainer.appendChild(tagDom);
-      nameContainer.appendChild(nickDom);
-      nameContainer.appendChild(pmDom);
-    } else if (pm == "from_me") {
-      nameContainer.appendChild(pmDom);
-      if (hasTagDom) nameContainer.appendChild(tagDom);
-      nameContainer.appendChild(nickDom);
-    }
-  } else {
-    nameContainer.appendChild(nickDom);
-  }
-  chatGroup.appendChild(msgDom);
+	maxScroll = field.scrollHeight - field.clientHeight;
+	if(doScrollBottom) {
+		field.scrollTop = maxScroll;
+	}
 
-  field.appendChild(chatGroup);
-
-  maxScroll = field.scrollHeight - field.clientHeight;
-  if (doScrollBottom) {
-    field.scrollTop = maxScroll;
-  }
-
-  var chatRec = {
-    id: id,
-    date: date,
-    field: field,
-    element: chatGroup
-  };
-  if (field == elm.page_chatfield) {
-    chatRecordsPage.push(chatRec);
-  } else if (field == elm.global_chatfield) {
-    chatRecordsGlobal.push(chatRec);
-  }
-  if (chatRecordsPage.length > chatHistoryLimit) { // overflow on current page
-    var rec = chatRecordsPage.shift();
-    rec.element.remove();
-  }
-  if (chatRecordsGlobal.length > chatHistoryLimit) { // overflow on global
-    var rec = chatRecordsGlobal.shift();
-    rec.element.remove();
-  }
+	var chatRec = {
+		id: id, date: date,
+		field: field,
+		element: chatGroup
+	};
+	if(field == elm.page_chatfield) {
+		chatRecordsPage.push(chatRec);
+	} else if(field == elm.global_chatfield) {
+		chatRecordsGlobal.push(chatRec);
+	}
+	if(chatRecordsPage.length > chatHistoryLimit) { // overflow on current page
+		var rec = chatRecordsPage.shift();
+		rec.element.remove();
+	}
+	if(chatRecordsGlobal.length > chatHistoryLimit) { // overflow on global
+		var rec = chatRecordsGlobal.shift();
+		rec.element.remove();
+	}
 }
 resetChat();
 var canResizeChat = true;
